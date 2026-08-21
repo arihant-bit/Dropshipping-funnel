@@ -27,11 +27,15 @@
   ul { margin: 0; padding: 0; list-style: none; }
   @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
   @keyframes logoMarquee { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
-  /* Mobile: the fixed top bar wraps to 2-3 rows, so reserve its real height.
-     max() keeps the original 118px on desktop and only grows when the bar does. */
-  :root { --topbar-h: 48px; }
+  /* The sticky CTA bar is pinned to the bottom, so the hero needs only normal
+     top spacing, and the page needs to reserve the bar height at the bottom.
+     --bar-h is measured at runtime: the bar wraps to 2-3 rows on mobile. */
+  :root { --bar-h: 56px; }
   section[data-screen-label="Hero"] {
-    padding-top: max(118px, calc(var(--topbar-h) + 28px)) !important;
+    padding-top: clamp(40px, 6vw, 72px) !important;
+  }
+  div[style*="overflow-x: hidden"] {
+    padding-bottom: calc(var(--bar-h) + 16px) !important;
   }
   @media (max-width: 560px) {
     div[style*="position: fixed"] > div { padding: 7px 14px !important; gap: 9px !important; }
@@ -41,7 +45,7 @@
 
 <div style="background: #12100E; color: #F4F1EA; overflow-x: hidden;">
 
-<div style="position: fixed; top: 0; left: 0; right: 0; z-index: 90; background: #12100E; borderBottom: 1px solid rgba(0,224,122,0.28); boxShadow: 0 8px 30px rgba(0,0,0,0.45);">
+<div style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; background: #12100E; borderTop: 1px solid rgba(0,224,122,0.28); boxShadow: 0 -8px 30px rgba(0,0,0,0.45);">
   <div style="max-width: 1160px; margin: 0 auto; padding: 9px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;">
     <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12.5px; letter-spacing: 0.02em;">
       <span style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px;">D2C Brand Workshop</span>
@@ -842,10 +846,9 @@ class Component extends DCLogic {
 }
 </script>
 <script>
-/* Keep the hero top padding in sync with the fixed bar height. The bar wraps on
-   mobile and changes height when the countdown shows/hides, so the hardcoded
-   118px padding let the bar overlap the hero. The bar node is re-created by the
-   page renderer, so re-attach the observer whenever it changes. */
+/* Reserve space for the bottom-pinned CTA bar. It wraps to 2-3 rows on mobile
+   and changes height when the countdown shows/hides, so measure it rather than
+   hardcoding. The renderer re-creates the bar node, so re-attach on change. */
 (function () {
   var SEL = 'div[style*="position: fixed"]';
   var observed = null;
@@ -859,7 +862,7 @@ class Component extends DCLogic {
       ro.observe(bar);
       observed = bar;
     }
-    document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px");
+    document.documentElement.style.setProperty("--bar-h", bar.offsetHeight + "px");
   }
 
   [0, 150, 400, 900, 1800, 3000].forEach(function (d) { setTimeout(sync, d); });
