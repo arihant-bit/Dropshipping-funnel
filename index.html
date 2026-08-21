@@ -27,6 +27,15 @@
   ul { margin: 0; padding: 0; list-style: none; }
   @keyframes pulseDot { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
   @keyframes logoMarquee { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
+  /* Mobile: the fixed top bar wraps to 2-3 rows, so reserve its real height.
+     max() keeps the original 118px on desktop and only grows when the bar does. */
+  :root { --topbar-h: 48px; }
+  section[data-screen-label="Hero"] {
+    padding-top: max(118px, calc(var(--topbar-h) + 28px)) !important;
+  }
+  @media (max-width: 560px) {
+    div[style*="position: fixed"] > div { padding: 7px 14px !important; gap: 9px !important; }
+  }
 </style>
 </helmet>
 
@@ -831,6 +840,34 @@ class Component extends DCLogic {
     };
   }
 }
+</script>
+<script>
+/* Keep the hero top padding in sync with the fixed bar height. The bar wraps on
+   mobile and changes height when the countdown shows/hides, so the hardcoded
+   118px padding let the bar overlap the hero. The bar node is re-created by the
+   page renderer, so re-attach the observer whenever it changes. */
+(function () {
+  var SEL = 'div[style*="position: fixed"]';
+  var observed = null;
+  var ro = window.ResizeObserver ? new ResizeObserver(sync) : null;
+
+  function sync() {
+    var bar = document.querySelector(SEL);
+    if (!bar) return;
+    if (ro && bar !== observed) {
+      if (observed) ro.unobserve(observed);
+      ro.observe(bar);
+      observed = bar;
+    }
+    document.documentElement.style.setProperty("--topbar-h", bar.offsetHeight + "px");
+  }
+
+  [0, 150, 400, 900, 1800, 3000].forEach(function (d) { setTimeout(sync, d); });
+  document.addEventListener("DOMContentLoaded", sync);
+  addEventListener("load", sync);
+  addEventListener("resize", sync);
+  addEventListener("orientationchange", function () { setTimeout(sync, 120); });
+})();
 </script>
 </body>
 </html>
